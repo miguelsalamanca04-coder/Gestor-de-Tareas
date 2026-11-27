@@ -1,17 +1,16 @@
-Gestor de Tareas — checkpoint al cierre de la Sesión 20
+Gestor de Tareas — checkpoint al cierre de la Sesión 21
 Electiva - PWA · UPTC
 
 Qué es esto
 -----------
-El Gestor de Tareas con su primera estrategia de caché con nombre
-(Sesión 20): el manejador de fetch ahora implementa Cache First de
-verdad — consulta el caché primero, y si no encuentra el recurso, lo
-pide a la red y lo guarda con cache.put() para la próxima vez. Se
-aplica igual a todo el shell porque enrutar distintas estrategias según
-el tipo de recurso (imágenes, API, HTML/CSS/JS) es justo el trabajo de
-la Sesión 21, con Network First y Stale-While-Revalidate ya sumadas al
-repertorio. Es el punto de partida de hoy: no lo reemplaces, cotéjalo
-contra tu propio proyecto si te quedaste atrás.
+El Gestor de Tareas con las 5 estrategias de caché completas y
+enrutadas por tipo de recurso (Sesión 21): Cache First para /icons/,
+Network First para una futura ruta /api/ (todavía no existe en este
+proyecto, queda preparada), y Stale-While-Revalidate para el resto del
+shell. Es el punto de partida de la Sesión 22 (IndexedDB y Web Crypto
+API) — el propio caché no cambia en esa sesión, lo que se agrega es
+almacenamiento estructurado aparte, con IndexedDB. No lo reemplaces,
+cotéjalo contra tu propio proyecto si te quedaste atrás.
 
 Cómo abrirlo
 ------------
@@ -25,7 +24,7 @@ Estructura
 ----------
   index.html               interfaz + manifest enlazado
   manifest.json             el manifest de la Sesión 16
-  sw.js                     Service Worker de la Sesión 20 (Cache First)
+  sw.js                     Service Worker de la Sesión 21 (enrutado)
   icons/                    icon-192.png, icon-512.png, icon-512-maskable.png
   css/estilos.css           estilos
   app.js                    punto de entrada + registro del Service Worker

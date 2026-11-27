@@ -21,10 +21,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Cache First (Sesión 20): se prueba primero en el caché; si falta, se
-// pide a la red y la respuesta se guarda para la próxima vez. Enrutar
-// esta y otras estrategias por tipo de recurso es el trabajo de la
-// Sesión 21 — por ahora se aplica igual a todo el shell.
 function cacheFirst(peticion) {
   return caches.match(peticion).then(enCache => {
     if (enCache) return enCache;
@@ -36,6 +32,38 @@ function cacheFirst(peticion) {
   });
 }
 
+function networkFirst(peticion) {
+  return fetch(peticion)
+    .then(respuesta => {
+      const clon = respuesta.clone();
+      caches.open(CACHE_ACTUAL).then(cache => cache.put(peticion, clon));
+      return respuesta;
+    })
+    .catch(() => caches.match(peticion));
+}
+
+function staleWhileRevalidate(peticion) {
+  return caches.open(CACHE_ACTUAL).then(cache =>
+    cache.match(peticion).then(enCache => {
+      const actualizacion = fetch(peticion).then(respuesta => {
+        cache.put(peticion, respuesta.clone());
+        return respuesta;
+      });
+      return enCache || actualizacion;
+    })
+  );
+}
+
+// Enrutado por tipo de recurso (Sesión 21): ya no se usa una sola
+// estrategia para todo.
 self.addEventListener('fetch', event => {
-  event.respondWith(cacheFirst(event.request));
+  const url = new URL(event.request.url);
+
+  if (url.pathname.startsWith('/icons/')) {
+    event.respondWith(cacheFirst(event.request));
+  } else if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirst(event.request));
+  } else {
+    event.respondWith(staleWhileRevalidate(event.request));
+  }
 });
