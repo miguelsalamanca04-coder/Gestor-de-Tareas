@@ -1,35 +1,38 @@
-Gestor de Tareas — checkpoint al cierre de la Sesión 23
+Gestor de Tareas — checkpoint al cierre de la Sesión 24
 Electiva - PWA · UPTC
 
 Qué es esto
 -----------
-El Gestor de Tareas tal como queda al terminar la Sesión 23 (Workbox y
-auditoría): el sw.js ya NO está escrito a mano — lo genera Workbox a
-partir de workbox-config.js (precaché con hashes de contenido + dos
-reglas de runtimeCaching, con expiración para los íconos). Además trae
-dos mejoras de UX/UI: un indicador de conexión visible y un botón de
-instalación propio (solo aparece en navegadores que disparan
-beforeinstallprompt, es decir Chromium; en Safari/iOS no aparece).
-IndexedDB + nota cifrada (Sesión 22) siguen igual.
+El Gestor de Tareas con APIs de dispositivo (Sesión 24): cada tarea puede
+llevar una FOTO tomada con la cámara (getUserMedia) y una UBICACIÓN
+(Geolocation). Ambas se piden solo cuando el usuario pulsa el botón
+correspondiente — nunca al cargar la página — y se guardan en el propio
+dispositivo (IndexedDB: la foto como Blob JPEG, la ubicación como objeto).
+No se envía nada a ningún servidor.
 
 Cómo probarlo
 --------------
-  1. Terminal, parado en esta carpeta:  python3 -m http.server 8080
-     y abrir http://localhost:8080 en Chrome o Edge.
-  2. Recarga una vez (para que el Service Worker tome el control),
-     DevTools → Network → "Offline" → recarga: la app sigue cargando.
-  3. Si cambias CUALQUIER archivo precacheado (app.js, css...), vuelve a
-     generar el sw.js, o el navegador seguirá sirviendo la versión vieja:
+  IMPORTANTE: la cámara y la ubicación solo funcionan en HTTPS o en
+  localhost. Con Live Server o con
+       python3 -m http.server 8080  →  http://localhost:8080
+  funciona en el computador. Para probar en un teléfono real necesitas
+  HTTPS (ver la guía de la Sesión 24, sección "Probar en el teléfono").
+  1. Agrega una tarea, pulsa "📷 Foto", acepta el permiso, "Capturar".
+  2. Pulsa "📍 Ubicación" y acepta el permiso. Aparece "lat, lon (±N m)".
+  3. Recarga: foto y ubicación siguen ahí (IndexedDB).
+  4. Pruébalo también DENEGANDO el permiso: la app debe mostrar un mensaje
+     claro y seguir funcionando.
+  5. Cada vez que cambies un archivo precacheado, regenera el sw.js
+     (ver LEEME de la Sesión 23): borra sw.js y workbox-XXXXXXXX.js,
+     NO el workbox-config.js, y corre
          npx workbox-cli generateSW workbox-config.js
-     (borra antes el sw.js y el workbox-XXXXXXXX.js anteriores, pero NO
-     el workbox-config.js).
 
 Estructura
 ----------
-  index.html, manifest.json, icons/, css/estilos.css
-  app.js / tareas.js / db.js / crypto.js   código de la app (Sesiones 15-22)
-  workbox-config.js     NUEVO (Sesión 23): configuración de Workbox
-  sw.js, workbox-XXXXXXXX.js   GENERADOS por Workbox — no se editan a mano
-  referencia-typescript/ versión tipada de referencia (no se ejecuta)
+  dispositivo.js    NUEVO (Sesión 24): cámara + ubicación + mensajes de error
+  tareas.js         ahora con fila de adjuntos (miniatura, coordenadas)
+  app.js            diálogo de cámara y flujo de adjuntos
+  index.html        <dialog> de la cámara + zona de mensajes
+  (el resto igual que en el checkpoint de la Sesión 23)
 
 UPTC · Facultad de Ingeniería · Electiva - PWA

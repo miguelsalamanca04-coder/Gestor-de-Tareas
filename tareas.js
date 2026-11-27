@@ -13,7 +13,8 @@
 /**
  * @typedef {"baja"|"media"|"alta"} Prioridad
  * @typedef {{ id?: number, titulo: string, prioridad: Prioridad, completada: boolean,
- *             fechaCreacion: string, notaCifrada: ArrayBuffer|null, notaIv: Uint8Array|null }} Tarea
+ *             fechaCreacion: string, notaCifrada: ArrayBuffer|null, notaIv: Uint8Array|null,
+ *             foto?: Blob|null, ubicacion?: { lat: number, lon: number, precision: number, momento: string }|null }} Tarea
  */
 
 /** Crea una tarea nueva. El id ya no se genera aquí — IndexedDB lo asigna con autoIncrement. */
@@ -24,11 +25,14 @@ export const crearTarea = (titulo, prioridad = "media") => ({
   fechaCreacion: new Date().toISOString(),
   notaCifrada: null,
   notaIv: null,
+  // Sesión 24: adjuntos opcionales. Ninguno se pide hasta que el usuario lo activa.
+  foto: null,
+  ubicacion: null,
 });
 
 /** Crea el <li> de una tarea y lo agrega al contenedor. Sesión 6 (DOM y eventos),
  *  ampliado en la Sesión 22 con los controles de la nota privada cifrada. */
-export const renderizarTarea = (tarea, contenedor, { onToggle, onEliminar, onGuardarNota, onVerNota }) => {
+export const renderizarTarea = (tarea, contenedor, { onToggle, onEliminar, onGuardarNota, onVerNota, onFoto, onUbicacion }) => {
   const li = document.createElement("li");
   li.className = `tarea tarea--${tarea.prioridad}` + (tarea.completada ? " tarea--completada" : "");
   li.dataset.id = tarea.id;
@@ -72,6 +76,37 @@ export const renderizarTarea = (tarea, contenedor, { onToggle, onEliminar, onGua
 
   notaFila.append(notaInput, guardarNota, verNota);
 
-  li.append(fila, notaFila);
+  // Sesión 24: fila de adjuntos (foto con cámara y ubicación).
+  const adjuntosFila = document.createElement("div");
+  adjuntosFila.className = "adjuntos-fila";
+
+  const btnFoto = document.createElement("button");
+  btnFoto.textContent = tarea.foto ? "📷 Cambiar foto" : "📷 Foto";
+  btnFoto.className = "btn-nota btn-foto";
+  btnFoto.addEventListener("click", () => onFoto(tarea.id));
+
+  const btnUbic = document.createElement("button");
+  btnUbic.textContent = tarea.ubicacion ? "📍 Actualizar ubicación" : "📍 Ubicación";
+  btnUbic.className = "btn-nota btn-ubicacion";
+  btnUbic.addEventListener("click", () => onUbicacion(tarea.id));
+
+  adjuntosFila.append(btnFoto, btnUbic);
+
+  if (tarea.foto) {
+    const img = document.createElement("img");
+    img.className = "miniatura";
+    img.alt = `Foto de la tarea "${tarea.titulo}"`;
+    img.src = URL.createObjectURL(tarea.foto); // se libera en app.js al repintar
+    adjuntosFila.append(img);
+  }
+  if (tarea.ubicacion) {
+    const u = tarea.ubicacion;
+    const dato = document.createElement("span");
+    dato.className = "dato-ubicacion";
+    dato.textContent = `${u.lat.toFixed(4)}, ${u.lon.toFixed(4)} (±${u.precision} m)`;
+    adjuntosFila.append(dato);
+  }
+
+  li.append(fila, notaFila, adjuntosFila);
   contenedor.append(li);
 };

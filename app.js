@@ -9,6 +9,14 @@ import {
   eliminarTareaDB,
   obtenerTodasLasTareas,
 } from "./db.js";
+import {
+  abrirCamara,
+  detenerCamara,
+  capturarFoto,
+  describirErrorCamara,
+  obtenerUbicacion,
+  describirErrorUbicacion,
+} from "./dispositivo.js";
 import { derivarClaveDesdeContrasena, cifrarTexto, descifrarTexto, obtenerOCrearSal } from "./crypto.js";
 
 let db;
@@ -23,7 +31,20 @@ const formEl = document.getElementById("form-tarea");
 const inputTituloEl = document.getElementById("input-titulo");
 const inputPrioridadEl = document.getElementById("input-prioridad");
 
+const mensajeEl = document.getElementById("mensaje-dispositivo");
+const dlgCamara = document.getElementById("dlg-camara");
+const videoEl = document.getElementById("video-camara");
+let streamActual = null;
+let tareaDeFoto = null;
+
+function avisar(texto) {
+  mensajeEl.textContent = texto;
+  mensajeEl.hidden = !texto;
+}
+
 const pintarTodo = () => {
+  // Libera las URLs de miniaturas de la pintada anterior (si no, quedan en memoria).
+  listaEl.querySelectorAll("img.miniatura").forEach((img) => URL.revokeObjectURL(img.src));
   listaEl.innerHTML = "";
   tareas.forEach((tarea) =>
     renderizarTarea(tarea, listaEl, {
@@ -31,6 +52,8 @@ const pintarTodo = () => {
       onEliminar: eliminarTarea,
       onGuardarNota: guardarNotaPrivada,
       onVerNota: verNotaPrivada,
+      onFoto: abrirDialogoCamara,
+      onUbicacion: adjuntarUbicacion,
     })
   );
 };
@@ -69,6 +92,59 @@ async function verNotaPrivada(id) {
     window.alert(`Nota privada de "${tarea.titulo}":\n\n${texto}`);
   } catch {
     window.alert("No se pudo descifrar — la contraseña ingresada no es la correcta.");
+  }
+}
+
+// ── Sesión 24: cámara ────────────────────────────────────────────────────
+async function abrirDialogoCamara(id) {
+  avisar("");
+  tareaDeFoto = id;
+  try {
+    // El permiso se pide AQUÍ, dentro del clic del usuario — no al cargar la página.
+    streamActual = await abrirCamara("environment");
+  } catch (err) {
+    avisar(describirErrorCamara(err));
+    return;
+  }
+  videoEl.srcObject = streamActual;
+  dlgCamara.showModal();
+}
+
+function cerrarDialogoCamara() {
+  detenerCamara(streamActual);
+  streamActual = null;
+  videoEl.srcObject = null;
+  if (dlgCamara.open) dlgCamara.close();
+}
+
+document.getElementById("btn-cancelar-camara").addEventListener("click", cerrarDialogoCamara);
+// Si el usuario cierra con Esc, el stream también debe detenerse.
+dlgCamara.addEventListener("close", () => {
+  if (streamActual) cerrarDialogoCamara();
+});
+
+document.getElementById("btn-capturar").addEventListener("click", async () => {
+  const blob = await capturarFoto(videoEl);
+  const tarea = tareas.find((t) => t.id === tareaDeFoto);
+  cerrarDialogoCamara();
+  if (!tarea || !blob) return;
+  tarea.foto = blob;
+  await actualizarTarea(db, tarea);
+  pintarTodo();
+});
+
+// ── Sesión 24: ubicación ─────────────────────────────────────────────────
+async function adjuntarUbicacion(id) {
+  avisar("Obteniendo ubicación…");
+  try {
+    const ubicacion = await obtenerUbicacion();
+    const tarea = tareas.find((t) => t.id === id);
+    tarea.ubicacion = ubicacion;
+    await actualizarTarea(db, tarea);
+    avisar("");
+    pintarTodo();
+  } catch (err) {
+    avisar(describirErrorUbicacion(err));
   }
 }
 

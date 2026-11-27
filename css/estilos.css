@@ -117,3 +117,12 @@ h1 { font-size: 1.6em; margin: 0 0 .1em; }
 .estado.en-linea { color: #2e7d32; }
 .estado.sin-conexion { color: var(--danger); font-weight: 600; }
 #btn-instalar { background: var(--ink); color: var(--gold); border: 0; border-radius: 8px; padding: .4em .8em; cursor: pointer; }
+
+/* Sesión 24: adjuntos (foto, ubicación) y diálogo de cámara */
+.adjuntos-fila { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; margin-top: .4em; }
+.miniatura { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.dato-ubicacion { font-size: .75em; color: #555; }
+.mensaje-dispositivo { background: #fff6dd; border: 1px solid var(--gold-deep); border-radius: 8px; padding: .5em .8em; font-size: .85em; }
+.dlg-camara { border: 0; border-radius: 14px; padding: 1em; max-width: 92vw; }
+.dlg-camara video { width: min(560px, 84vw); border-radius: 10px; background: #000; display: block; }
+.dlg-acciones { display: flex; gap: .6em; justify-content: flex-end; margin-top: .8em; }
