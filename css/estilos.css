@@ -111,3 +111,9 @@ h1 { font-size: 1.6em; margin: 0 0 .1em; }
 }
 .btn-nota:hover:not(:disabled) { background: #fff8e1; }
 .btn-nota:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Sesión 23: barra de estado y botón de instalación */
+.barra-estado { display: flex; justify-content: space-between; align-items: center; gap: .6em; margin-bottom: .8em; font-size: .8em; }
+.estado.en-linea { color: #2e7d32; }
+.estado.sin-conexion { color: var(--danger); font-weight: 600; }
+#btn-instalar { background: var(--ink); color: var(--gold); border: 0; border-radius: 8px; padding: .4em .8em; cursor: pointer; }

@@ -111,7 +111,36 @@ async function iniciar() {
 
 iniciar();
 
-// Registro del Service Worker — Sesión 17.
+// Indicador de conexión — Sesión 23 (UX/UI).
+const estadoEl = document.getElementById("estado-conexion");
+function actualizarEstadoConexion() {
+  const enLinea = navigator.onLine;
+  estadoEl.textContent = enLinea ? "● En línea" : "● Sin conexión — los datos se guardan en tu dispositivo";
+  estadoEl.className = "estado " + (enLinea ? "en-linea" : "sin-conexion");
+}
+window.addEventListener("online", actualizarEstadoConexion);
+window.addEventListener("offline", actualizarEstadoConexion);
+actualizarEstadoConexion();
+
+// Botón de instalación propio — Sesión 23 (UX/UI). Solo Chromium dispara
+// beforeinstallprompt; en Safari/iOS el botón nunca aparece (ver la guía).
+let promptInstalacion = null;
+const btnInstalar = document.getElementById("btn-instalar");
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  promptInstalacion = e;
+  btnInstalar.hidden = false;
+});
+btnInstalar.addEventListener("click", async () => {
+  if (!promptInstalacion) return;
+  promptInstalacion.prompt();
+  await promptInstalacion.userChoice;
+  promptInstalacion = null;
+  btnInstalar.hidden = true;
+});
+window.addEventListener("appinstalled", () => { btnInstalar.hidden = true; });
+
+// Registro del Service Worker — Sesión 17 (el sw.js, desde la Sesión 23, lo genera Workbox).
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/sw.js")

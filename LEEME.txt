@@ -1,46 +1,35 @@
-Gestor de Tareas — checkpoint al cierre de la Sesión 22
+Gestor de Tareas — checkpoint al cierre de la Sesión 23
 Electiva - PWA · UPTC
 
 Qué es esto
 -----------
-El Gestor de Tareas con IndexedDB y Web Crypto API ya integrados
-(Sesión 22). La persistencia dejó de ser localStorage (texto plano,
-síncrono) y pasa por una base de datos IndexedDB real: object store
-"tareas" con clave autoincremental e índices por prioridad y por
-título. Cada tarea puede llevar, además, una nota privada: se cifra
-con AES-GCM usando una clave derivada por contraseña con PBKDF2 (no
-una clave aleatoria de un solo uso) — la contraseña nunca se guarda,
-solo se usa en el momento para re-derivar la misma clave cada vez.
-Es el punto de partida de la Sesión 23 (Workbox y auditoría): el
-Service Worker sigue siendo el mismo de la Sesión 21, sin cambios.
+El Gestor de Tareas tal como queda al terminar la Sesión 23 (Workbox y
+auditoría): el sw.js ya NO está escrito a mano — lo genera Workbox a
+partir de workbox-config.js (precaché con hashes de contenido + dos
+reglas de runtimeCaching, con expiración para los íconos). Además trae
+dos mejoras de UX/UI: un indicador de conexión visible y un botón de
+instalación propio (solo aparece en navegadores que disparan
+beforeinstallprompt, es decir Chromium; en Safari/iOS no aparece).
+IndexedDB + nota cifrada (Sesión 22) siguen igual.
 
 Cómo probarlo
 --------------
-  1. VS Code + extensión "Live Server": clic derecho sobre index.html →
-     "Open with Live Server".
-  2. Terminal, parado en esta carpeta:
-       python3 -m http.server 8080
-     y abrir http://localhost:8080 en el navegador.
-  3. Agrega una tarea, escribe algo en "Nota privada" y pulsa
-     "🔒 Guardar" — la primera vez pedirá una contraseña (cualquiera,
-     la que quieras probar). Pulsa "👁 Ver nota" para descifrarla.
-     Recarga la página: la tarea y la nota siguen ahí (IndexedDB), y
-     volver a escribir la MISMA contraseña vuelve a descifrarla bien.
-  4. Para ver los datos en crudo: DevTools → Application → IndexedDB →
-     gestor-tareas-db → tareas. El campo notaCifrada debe verse como
-     bytes ilegibles, nunca como el texto original.
+  1. Terminal, parado en esta carpeta:  python3 -m http.server 8080
+     y abrir http://localhost:8080 en Chrome o Edge.
+  2. Recarga una vez (para que el Service Worker tome el control),
+     DevTools → Network → "Offline" → recarga: la app sigue cargando.
+  3. Si cambias CUALQUIER archivo precacheado (app.js, css...), vuelve a
+     generar el sw.js, o el navegador seguirá sirviendo la versión vieja:
+         npx workbox-cli generateSW workbox-config.js
+     (borra antes el sw.js y el workbox-XXXXXXXX.js anteriores, pero NO
+     el workbox-config.js).
 
 Estructura
 ----------
-  index.html               interfaz + manifest enlazado
-  manifest.json             el manifest de la Sesión 16
-  sw.js                     Service Worker de la Sesión 21 (enrutado), sin cambios
-  icons/                    icon-192.png, icon-512.png, icon-512-maskable.png
-  css/estilos.css           estilos
-  app.js                    punto de entrada, IndexedDB + flujo de nota cifrada
-  tareas.js                 crearTarea, renderizarTarea (ahora con fila de nota)
-  db.js                     NUEVO (Sesión 22): envoltorio en promesas de IndexedDB
-  crypto.js                 NUEVO (Sesión 22): PBKDF2 + AES-GCM + manejo de la sal
-  referencia-typescript/    versión tipada de referencia (no se ejecuta)
+  index.html, manifest.json, icons/, css/estilos.css
+  app.js / tareas.js / db.js / crypto.js   código de la app (Sesiones 15-22)
+  workbox-config.js     NUEVO (Sesión 23): configuración de Workbox
+  sw.js, workbox-XXXXXXXX.js   GENERADOS por Workbox — no se editan a mano
+  referencia-typescript/ versión tipada de referencia (no se ejecuta)
 
 UPTC · Facultad de Ingeniería · Electiva - PWA
