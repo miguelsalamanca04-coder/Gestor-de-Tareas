@@ -17,6 +17,7 @@ import {
   obtenerUbicacion,
   describirErrorUbicacion,
 } from "./dispositivo.js";
+import { pedirPermisoSensores, hayLecturasReales, escucharOrientacion, detectarSacudida } from "./sensores.js";
 import { derivarClaveDesdeContrasena, cifrarTexto, descifrarTexto, obtenerOCrearSal } from "./crypto.js";
 
 let db;
@@ -155,7 +156,58 @@ async function alternarCompletada(id) {
   pintarTodo();
 }
 
+// ── Sesión 25: deshacer la última eliminación (botón, o agitando el teléfono) ──
+let ultimaEliminada = null;
+const btnDeshacer = document.getElementById("btn-deshacer");
+
+async function deshacerEliminacion() {
+  if (!ultimaEliminada) return;
+  const { id, ...resto } = ultimaEliminada; // IndexedDB asigna un id nuevo
+  const nuevoId = await agregarTarea(db, resto);
+  tareas.push({ ...resto, id: nuevoId });
+  avisar(`Se restauró «${resto.titulo}».`);
+  ultimaEliminada = null;
+  btnDeshacer.disabled = true;
+  pintarTodo();
+}
+btnDeshacer.addEventListener("click", deshacerEliminacion);
+
+let detenerSacudida = null;
+let detenerOrientacion = null;
+const btnSensores = document.getElementById("btn-sensores");
+const lecturaEl = document.getElementById("lectura-sensores");
+
+btnSensores.addEventListener("click", async () => {
+  if (detenerSacudida) {
+    // Segundo clic: apagar los sensores (ahorra batería y es lo que espera el usuario).
+    detenerSacudida();
+    detenerOrientacion?.();
+    detenerSacudida = detenerOrientacion = null;
+    lecturaEl.textContent = "";
+    btnSensores.textContent = "📳 Activar agitar para deshacer";
+    return;
+  }
+  // En iOS el permiso se pide AQUÍ, dentro del clic.
+  const permiso = await pedirPermisoSensores();
+  if (permiso === "denied") {
+    avisar("Denegaste el acceso a los sensores. Puedes seguir usando el botón «Deshacer».");
+    return;
+  }
+  if (permiso === "no-soportado" || !(await hayLecturasReales())) {
+    avisar("Este dispositivo no tiene sensores de movimiento. Usa el botón «Deshacer eliminación».");
+    return;
+  }
+  avisar("");
+  detenerSacudida = detectarSacudida(() => deshacerEliminacion());
+  detenerOrientacion = escucharOrientacion(({ beta, gamma }) => {
+    lecturaEl.textContent = `inclinación β ${Math.round(beta)}° · γ ${Math.round(gamma)}°`;
+  });
+  btnSensores.textContent = "📳 Agitar para deshacer: ACTIVO";
+});
+
 async function eliminarTarea(id) {
+  ultimaEliminada = tareas.find((t) => t.id === id) ?? null;
+  btnDeshacer.disabled = !ultimaEliminada;
   await eliminarTareaDB(db, id);
   tareas = tareas.filter((t) => t.id !== id);
   pintarTodo();

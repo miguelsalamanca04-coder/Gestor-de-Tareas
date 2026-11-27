@@ -1,38 +1,38 @@
-Gestor de Tareas — checkpoint al cierre de la Sesión 24
+Gestor de Tareas — checkpoint al cierre de la Sesión 25
 Electiva - PWA · UPTC
 
 Qué es esto
 -----------
-El Gestor de Tareas con APIs de dispositivo (Sesión 24): cada tarea puede
-llevar una FOTO tomada con la cámara (getUserMedia) y una UBICACIÓN
-(Geolocation). Ambas se piden solo cuando el usuario pulsa el botón
-correspondiente — nunca al cargar la página — y se guardan en el propio
-dispositivo (IndexedDB: la foto como Blob JPEG, la ubicación como objeto).
-No se envía nada a ningún servidor.
+El Gestor de Tareas tal como queda al terminar la Sesión 25. Es el PUNTO DE
+PARTIDA de la Sesión 26 (notificaciones push y Background Sync).
+
+Lo que ya tiene (acumulado):
+  - Sesiones 8-22: tareas, módulos ES, IndexedDB (db.js), cifrado (crypto.js)
+  - Sesión 23: Service Worker GENERADO por Workbox (generateSW), indicador de
+    conexión y botón de instalación
+  - Sesión 24: cámara, micrófono y ubicación (dispositivo.js)
+  - Sesión 25: sensores de movimiento (sensores.js): "agitar para deshacer"
+    y botón «Deshacer eliminación» de respaldo
 
 Cómo probarlo
 --------------
-  IMPORTANTE: la cámara y la ubicación solo funcionan en HTTPS o en
-  localhost. Con Live Server o con
-       python3 -m http.server 8080  →  http://localhost:8080
-  funciona en el computador. Para probar en un teléfono real necesitas
-  HTTPS (ver la guía de la Sesión 24, sección "Probar en el teléfono").
-  1. Agrega una tarea, pulsa "📷 Foto", acepta el permiso, "Capturar".
-  2. Pulsa "📍 Ubicación" y acepta el permiso. Aparece "lat, lon (±N m)".
-  3. Recarga: foto y ubicación siguen ahí (IndexedDB).
-  4. Pruébalo también DENEGANDO el permiso: la app debe mostrar un mensaje
-     claro y seguir funcionando.
-  5. Cada vez que cambies un archivo precacheado, regenera el sw.js
-     (ver LEEME de la Sesión 23): borra sw.js y workbox-XXXXXXXX.js,
-     NO el workbox-config.js, y corre
-         npx workbox-cli generateSW workbox-config.js
+  Necesita localhost o HTTPS (cámara, ubicación y Service Worker lo exigen):
+       python3 -m http.server 8080   →   http://localhost:8080
+  (en la Sesión 26 lo reemplazarás por un pequeño servidor Node propio)
+
+Regla de oro de este proyecto
+------------------------------
+  Cada vez que cambies un archivo precacheado hay que REGENERAR sw.js:
+       borra sw.js y workbox-XXXXXXXX.js   (NO borres workbox-config.js)
+       npx workbox-cli generateSW workbox-config.js
 
 Estructura
 ----------
-  dispositivo.js    NUEVO (Sesión 24): cámara + ubicación + mensajes de error
-  tareas.js         ahora con fila de adjuntos (miniatura, coordenadas)
-  app.js            diálogo de cámara y flujo de adjuntos
-  index.html        <dialog> de la cámara + zona de mensajes
-  (el resto igual que en el checkpoint de la Sesión 23)
+  index.html · app.js · tareas.js · db.js · crypto.js
+  dispositivo.js (Sesión 24) · sensores.js (Sesión 25)
+  css/estilos.css · icons/ · manifest.json
+  sw.js + workbox-XXXXXXXX.js    (generados — no se editan)
+  workbox-config.js              (la receta de generateSW)
+  referencia-typescript/         (material de sesiones anteriores)
 
 UPTC · Facultad de Ingeniería · Electiva - PWA
