@@ -21,10 +21,21 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Cache First (Sesión 20): se prueba primero en el caché; si falta, se
+// pide a la red y la respuesta se guarda para la próxima vez. Enrutar
+// esta y otras estrategias por tipo de recurso es el trabajo de la
+// Sesión 21 — por ahora se aplica igual a todo el shell.
+function cacheFirst(peticion) {
+  return caches.match(peticion).then(enCache => {
+    if (enCache) return enCache;
+    return fetch(peticion).then(respuesta => {
+      const clon = respuesta.clone();
+      caches.open(CACHE_ACTUAL).then(cache => cache.put(peticion, clon));
+      return respuesta;
+    });
+  });
+}
+
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(
-      encontrado => encontrado || fetch(event.request)
-    )
-  );
+  event.respondWith(cacheFirst(event.request));
 });
