@@ -1,4 +1,4 @@
-    Gestor de Tareas — checkpoint al cierre de la Sesión 16
+    Gestor de Tareas — COMPLETO
 Electiva - PWA · UPTC
 
 Qué es esto
