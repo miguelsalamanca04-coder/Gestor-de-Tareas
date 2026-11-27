@@ -50,3 +50,11 @@ async function iniciar() {
 }
 
 iniciar();
+
+// Registro del Service Worker — Sesión 17.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then((reg) => console.log("SW registrado:", reg.scope))
+    .catch((err) => console.error("Error al registrar SW:", err));
+}
