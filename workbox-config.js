@@ -1,3 +1,6 @@
+// Sesión 26: InjectManifest. A diferencia de generateSW (Sesión 23), aquí
+// NO se describe el comportamiento del SW: se indica cuál es TU archivo
+// (swSrc) y cuáles archivos entran en la lista de precaché.
 module.exports = {
   globDirectory: '.',
   globPatterns: [
@@ -7,23 +10,8 @@ module.exports = {
     '*.js',
     'icons/*.png',
   ],
-  globIgnores: ['node_modules/**/*', 'workbox-config.js', 'sw.js', 'workbox-????????.js', 'package*.json'],
+  // sw-propio.js es el CÓDIGO FUENTE del SW: no debe precachearse a sí mismo.
+  globIgnores: ['node_modules/**/*', 'servidor/**/*', 'lib/**/*', 'workbox-config.js', 'sw.js', 'sw-propio.js', 'package*.json'],
+  swSrc: 'sw-propio.js',
   swDest: 'sw.js',
-  clientsClaim: true,
-  skipWaiting: true,
-  runtimeCaching: [
-    {
-      urlPattern: /\/icons\//,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'imagenes',
-        expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
-      },
-    },
-    {
-      urlPattern: /\/api\//,
-      handler: 'NetworkFirst',
-      options: { cacheName: 'api-tareas' },
-    },
-  ],
 };

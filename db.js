@@ -4,7 +4,8 @@
 // y un cursor con índice.
 
 const NOMBRE_DB = "gestor-tareas-db";
-const VERSION_DB = 1;
+// Versión 2 (Sesión 26): se agrega la bandeja de salida "outbox" para Background Sync.
+const VERSION_DB = 2;
 
 /** Abre (o crea) la base de datos. Sesión 22, sección 3. */
 export function abrirBaseDeDatos() {
@@ -13,12 +14,28 @@ export function abrirBaseDeDatos() {
 
     peticion.onupgradeneeded = (event) => {
       const db = event.target.result;
-      const store = db.createObjectStore("tareas", { keyPath: "id", autoIncrement: true });
-      store.createIndex("porPrioridad", "prioridad", { unique: false });
-      store.createIndex("porTitulo", "titulo", { unique: true });
+      // Las migraciones se escriben por TRAMOS según la versión de la que se
+      // viene (Sesión 22): quien ya tenía la v1 conserva sus tareas y solo
+      // recibe lo nuevo; quien instala por primera vez ejecuta ambos tramos.
+      if (event.oldVersion < 1) {
+        const store = db.createObjectStore("tareas", { keyPath: "id", autoIncrement: true });
+        store.createIndex("porPrioridad", "prioridad", { unique: false });
+        store.createIndex("porTitulo", "titulo", { unique: true });
+      }
+      if (event.oldVersion < 2) {
+        // La clave es un UUID que genera la app (no autoIncrement): el servidor
+        // lo usa para no duplicar un cambio si el envío se reintenta.
+        db.createObjectStore("outbox", { keyPath: "idCambio" });
+      }
     };
 
-    peticion.onsuccess = (event) => resolve(event.target.result);
+    peticion.onsuccess = (event) => {
+      const db = event.target.result;
+      // Si otra pestaña (o una versión futura) necesita actualizar el esquema,
+      // esta conexión debe cerrarse o la actualización queda bloqueada.
+      db.onversionchange = () => db.close();
+      resolve(db);
+    };
     peticion.onerror = (event) => reject(event.target.error);
   });
 }

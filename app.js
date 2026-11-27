@@ -18,6 +18,16 @@ import {
   describirErrorUbicacion,
 } from "./dispositivo.js";
 import { pedirPermisoSensores, hayLecturasReales, escucharOrientacion, detectarSacudida } from "./sensores.js";
+import {
+  estadoNotificaciones,
+  pedirPermisoNotificaciones,
+  mostrarAvisoLocal,
+  suscribirAPush,
+  suscripcionActual,
+  cancelarSuscripcion,
+  describirErrorPush,
+} from "./notificaciones.js";
+import { encolarCambio, contarPendientes, pedirSincronizacion, haySyncEnSegundoPlano } from "./sync.js";
 import { derivarClaveDesdeContrasena, cifrarTexto, descifrarTexto, obtenerOCrearSal } from "./crypto.js";
 
 let db;
@@ -223,6 +233,101 @@ formEl.addEventListener("submit", async (evento) => {
   tareas.push(tareaNueva);
   pintarTodo();
   formEl.reset();
+  // Sesión 26: la tarea ya está guardada en el dispositivo. Ahora se anota para
+  // enviarla al servidor cuando se pueda — sin bloquear al usuario.
+  await encolarCambio(db, "crear-tarea", { titulo: tareaNueva.titulo, prioridad: tareaNueva.prioridad });
+  await actualizarEstadoSync();
+  try {
+    await pedirSincronizacion(db);
+  } catch (err) {
+    console.warn("No se pudo sincronizar todavía:", err.message);
+  }
+  await actualizarEstadoSync();
+});
+
+// ── Sesión 26: estado de sincronización ──────────────────────────────────
+const estadoSyncEl = document.getElementById("estado-sync");
+async function actualizarEstadoSync() {
+  const n = await contarPendientes(db);
+  const via = haySyncEnSegundoPlano() ? "" : " (este navegador no tiene Background Sync: se envía con la pestaña abierta)";
+  estadoSyncEl.textContent = n === 0 ? "☁ Todo sincronizado con el servidor." : `☁ ${n} cambio(s) pendiente(s) de enviar${via}.`;
+  estadoSyncEl.classList.toggle("pendiente", n > 0);
+}
+
+// El SW avisa cuando termina de sincronizar en segundo plano.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", async (e) => {
+    if (e.data?.tipo === "sync-completo") {
+      await actualizarEstadoSync();
+      avisar(`Se sincronizaron ${e.data.enviados} cambio(s) con el servidor.`);
+    }
+  });
+}
+// Plan B para navegadores sin Background Sync: al volver la red, reintentar desde la página.
+window.addEventListener("online", async () => {
+  if (db && (await contarPendientes(db)) > 0) {
+    try { await pedirSincronizacion(db); } catch { /* sigue pendiente */ }
+    await actualizarEstadoSync();
+  }
+});
+
+// ── Sesión 26: avisos y push ─────────────────────────────────────────────
+const btnAvisos = document.getElementById("btn-avisos");
+const btnPush = document.getElementById("btn-push");
+const btnPushPrueba = document.getElementById("btn-push-prueba");
+const estadoAvisosEl = document.getElementById("estado-avisos");
+
+async function pintarEstadoAvisos() {
+  const permiso = estadoNotificaciones();
+  const sub = permiso === "granted" ? await suscripcionActual().catch(() => null) : null;
+  btnAvisos.disabled = permiso === "granted" || permiso === "denied" || permiso === "no-soportado";
+  btnPush.disabled = permiso !== "granted";
+  btnPush.textContent = sub ? "📡 Cancelar suscripción push" : "📡 Suscribir a push";
+  btnPushPrueba.disabled = !sub;
+  estadoAvisosEl.textContent =
+    permiso === "no-soportado" ? "Este navegador no soporta notificaciones."
+    : permiso === "denied" ? "Avisos bloqueados (cámbialo en la configuración del sitio)."
+    : permiso === "default" ? "Avisos sin activar."
+    : sub ? "Avisos activos · push suscrito." : "Avisos activos · push sin suscribir.";
+}
+
+btnAvisos.addEventListener("click", async () => {
+  // Permiso pedido AQUÍ, dentro del clic — y el usuario ya sabe para qué lo pulsó.
+  const permiso = await pedirPermisoNotificaciones();
+  if (permiso === "granted") {
+    await mostrarAvisoLocal("Avisos activados", "Así se verán las notificaciones del Gestor.");
+  } else {
+    avisar("No se activaron los avisos. La app sigue funcionando igual.");
+  }
+  await pintarEstadoAvisos();
+});
+
+btnPush.addEventListener("click", async () => {
+  avisar("");
+  try {
+    if (await suscripcionActual()) {
+      await cancelarSuscripcion();
+    } else {
+      await suscribirAPush();
+    }
+  } catch (err) {
+    avisar(describirErrorPush(err));
+  }
+  await pintarEstadoAvisos();
+});
+
+btnPushPrueba.addEventListener("click", async () => {
+  try {
+    const resp = await fetch("/api/enviar-prueba", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titulo: "Recordatorio", cuerpo: "Tienes tareas pendientes en el Gestor." }),
+    });
+    const r = await resp.json();
+    avisar(`Servidor: ${r.enviados} enviado(s), ${r.fallidos} fallido(s).`);
+  } catch {
+    avisar("No se pudo contactar al servidor (¿está corriendo node server.js?).");
+  }
 });
 
 async function iniciar() {
@@ -235,6 +340,8 @@ async function iniciar() {
     tareas = [inicial];
   }
   pintarTodo();
+  await actualizarEstadoSync();
+  await pintarEstadoAvisos();
 }
 
 iniciar();
@@ -268,7 +375,8 @@ btnInstalar.addEventListener("click", async () => {
 });
 window.addEventListener("appinstalled", () => { btnInstalar.hidden = true; });
 
-// Registro del Service Worker — Sesión 17 (el sw.js, desde la Sesión 23, lo genera Workbox).
+// Registro del Service Worker — Sesión 17. Desde la Sesión 26, sw.js sale de
+// sw-propio.js (escrito a mano) + la lista de precaché que inyecta Workbox.
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/sw.js")

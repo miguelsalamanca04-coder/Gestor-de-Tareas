@@ -132,3 +132,11 @@ h1 { font-size: 1.6em; margin: 0 0 .1em; }
 .barra-sensores button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: .4em .7em; cursor: pointer; font-size: .8em; }
 .barra-sensores button:disabled { opacity: .45; cursor: not-allowed; }
 .lectura-sensores { font-size: .75em; color: #555; font-variant-numeric: tabular-nums; }
+
+/* Sesión 26: avisos (notificaciones, push) y estado de sincronización */
+.barra-avisos { display: flex; align-items: center; gap: .5em; flex-wrap: wrap; margin-bottom: .6em; }
+.barra-avisos button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: .4em .7em; cursor: pointer; font-size: .8em; }
+.barra-avisos button:disabled { opacity: .45; cursor: not-allowed; }
+.estado-avisos { font-size: .75em; color: #555; }
+.estado-sync { font-size: .78em; color: #555; margin: 0 0 .8em; }
+.estado-sync.pendiente { color: var(--gold-deep); font-weight: 600; }
