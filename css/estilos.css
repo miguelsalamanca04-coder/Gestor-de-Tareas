@@ -59,18 +59,23 @@ h1 { font-size: 1.6em; margin: 0 0 .1em; }
 .lista-tareas { list-style: none; margin: 0; padding: 0; display: grid; gap: .5em; }
 .tarea {
   display: flex;
-  align-items: center;
-  gap: .7em;
+  flex-direction: column;
+  gap: .5em;
   padding: .7em .9em;
   border: 1px solid var(--line);
   border-left: 4px solid #999;
   border-radius: 8px;
 }
+.tarea-fila {
+  display: flex;
+  align-items: center;
+  gap: .7em;
+}
 .tarea--baja { border-left-color: #6fa8dc; }
 .tarea--media { border-left-color: var(--gold-deep); }
 .tarea--alta { border-left-color: var(--danger); }
-.tarea span { flex: 1; }
-.tarea--completada span { text-decoration: line-through; color: #999; }
+.tarea-fila span { flex: 1; }
+.tarea--completada .tarea-fila span { text-decoration: line-through; color: #999; }
 .btn-eliminar {
   background: none;
   border: 1px solid var(--line);
@@ -81,3 +86,28 @@ h1 { font-size: 1.6em; margin: 0 0 .1em; }
   color: var(--danger);
 }
 .btn-eliminar:hover { background: #fdecea; }
+
+.nota-fila {
+  display: flex;
+  gap: .4em;
+  padding-left: 1.9em;
+}
+.nota-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: .4em .6em;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: .82em;
+}
+.btn-nota {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: .3em .6em;
+  font-size: .78em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-nota:hover:not(:disabled) { background: #fff8e1; }
+.btn-nota:disabled { opacity: .4; cursor: not-allowed; }
